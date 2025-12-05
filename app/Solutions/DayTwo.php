@@ -10,74 +10,65 @@ use function Laravel\Prompts\info;
 
 class DayTwo implements PuzzleBoard
 {
+    public float $total = 0;
+
     public function firstPuzzle(Iterator $data): mixed
     {
-        dd($data);
-    }
+        // 11-22
+        $data->rewind();
+        foreach ($data->current() as $row) {
+            [$low, $high] = explode('-', $row);
 
-    public function rotate(string $direction, int $distance, int $from): int
-    {
-        if ($direction === 'L') {
-            // If the distance is greater than the position, set position to 100 - the delta.
-            if ($distance > $from) {
-                $position = 100 - ($distance - $from);
-            } else {
-                $position = $from - $distance;
+            info("Low: {$low}, High: {$high}");
+
+            while ($this->hasOddDigits($low) && $low <= $high) {
+                if ($this->double($low) <= $high) {
+                    info("Adding {$this->double($low)} to the total.");
+                    $this->total += $this->double($low);
+                }
+                $low++;
             }
-        } else if ($direction === 'R') {
-            // If the resulting from would be more than 100, set from to the delta.
-            if ($from + $distance >= 100) {
-                $position = $distance - (100 - $from);
-            } else {
-                $position = $from + $distance;
+
+            // Find the first half of the number
+            $length = str($low)->length();
+            $check = str($low)->substr(start: 0, length: $length/2)->toFloat();
+
+            while ($this->double($check) <= (float) $high) {
+                $doubled = $this->double((string) $check);
+
+                if ($doubled >= (float) $low && $doubled <= (float) $high) {
+                    info("Adding {$doubled} to the total.");
+                    $this->total += $doubled;
+                }
+
+                $check++;
             }
-        } else {
-            throw new \Exception('Invalid direction');
+
         }
 
-        return $position;
+        return $this->total;
     }
 
-    public function rotateWithCount(string $direction, int $distance, int $from): array
+    private function double(string $int)
     {
-        $count = (int) floor($distance / 100) ?? 0;
-        $distance = $distance % 100;
-
-        if ($direction === 'L' && $from - $distance <= 0 && $from !== 0) {
-            $count++;
-        } else if ($direction === 'R' && $from + $distance >= 100) {
-            $count++;
-        }
-
-        $position = $this->rotate($direction, $distance, $from);
-
-        return [$position, $count];
+        return (float) ($int . $int);
     }
 
     public function secondPuzzle(Iterator $data): mixed
     {
-        $position = 50;
-        $count = 0;
+        $data->rewind();
 
-        foreach ($data as $row) {
-            $oldPosition = $position;
-            $direction = Str::of($row[0])->charAt(0);
-            $distance = Str::of($row[0])->substr(1)->toInteger();
-            [$position, $numberOfZeros] = $this->rotateWithCount(
-                direction: $direction,
-                distance: $distance,
-                from: $position
-            );
+        dump($data->current());
 
-            // if ($position === 0) {
-            //     $numberOfZeros++;
-            // }
+        return 'foo';
+    }
 
-            info("Moving {$direction} {$distance} from {$oldPosition} to {$position} - {$numberOfZeros} " . Str::plural('zero', $numberOfZeros));
-
-            $count += $numberOfZeros;
-        }
-
-        return $count;
+    /**
+     * @param string $low
+     * @return bool
+     */
+    public function hasOddDigits(string $low): bool
+    {
+        return str($low)->length() % 2 === 1;
     }
 }
